@@ -3,13 +3,13 @@
 
 #include "common.h"
 
-/* ÏÔÊ¾Ò»¸öËÄÎ»Ê®½øÖÆÊý£¬Ç°µ¼Áã±£Áô£»Ö»Ê¹ÓÃÄ©ËÄÎ»¡£ */
+/* ï¿½ï¿½Ê¾Ò»ï¿½ï¿½ï¿½ï¿½Î»Ê®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ã±£ï¿½ï¿½ï¿½ï¿½Ö»Ê¹ï¿½ï¿½Ä©ï¿½ï¿½Î»ï¿½ï¿½ */
 void Display4Digits(U16 value);
 
-/* ÖØÐÂÐ´Èëµ±Ç°±£´æµÄËÄÎ»Êý¡£ */
+/* ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ëµ±Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ */
 void Display4DigitsRefresh(void);
 
-/* ¶ÀÁ¢Í¼ÐÎ¿ØÖÆÎ»£¬Ä¬ÈÏÈ«²¿¹Ø±Õ£»¶à¸öÍ¼ÐÎ¿ÉÓÃ | ×éºÏ¡£ */
+/* ï¿½ï¿½ï¿½ï¿½Í¼ï¿½Î¿ï¿½ï¿½ï¿½Î»ï¿½ï¿½Ä¬ï¿½ï¿½È«ï¿½ï¿½ï¿½Ø±Õ£ï¿½ï¿½ï¿½ï¿½Í¼ï¿½Î¿ï¿½ï¿½ï¿½ | ï¿½ï¿½Ï¡ï¿½ */
 #define DISPLAY_GRAPHIC_T1   ((U32)0x000001UL)
 #define DISPLAY_GRAPHIC_T2   ((U32)0x000002UL)
 #define DISPLAY_GRAPHIC_T3   ((U32)0x000004UL)
@@ -38,11 +38,14 @@ void DisplayGraphicsSet(U32 graphic_mask);
 void DisplayGraphicsOn(U32 graphic_mask);
 void DisplayGraphicsOff(U32 graphic_mask);
 void DisplayGraphicsRefresh(void);
+void DisplayShowNormal(U16 rpm, U8 fan_level, U32 graphics);
+void DisplayShowTimer(U8 value, bit icon_on);
+void DisplayShowAlarmRpm(U16 value, bit icon_on);
 
-/* Ö»ÏÔÊ¾µÚ 1 ºÅ 10 ¶Î¹Ü£¬ÊýÖµ·¶Î§ 0~9¡£ */
+/* Ö»ï¿½ï¿½Ê¾ï¿½ï¿½ 1 ï¿½ï¿½ 10 ï¿½Î¹Ü£ï¿½ï¿½ï¿½Öµï¿½ï¿½Î§ 0~9ï¿½ï¿½ */
 void Display1Digit10Seg(U8 digit);
 
-/* ¶ÀÁ¢¸üÐÂµÚ 5~10 ºÅ¹Ü£¬ÊýÖµ·¶Î§ 0~9¡£ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½ 5~10 ï¿½Å¹Ü£ï¿½ï¿½ï¿½Öµï¿½ï¿½Î§ 0~9ï¿½ï¿½ */
 void Display5Digit10Seg(U8 digit);
 void Display6Digit10Seg(U8 digit);
 void Display7Digit10Seg(U8 digit);

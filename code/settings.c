@@ -9,6 +9,8 @@ static U16 s_time;
 static U16 s_alarm_rpm;
 static U8 s_remaining_seconds;
 static U16 s_last_second_tick;
+static U16 s_last_blink_tick;
+static bit s_icon_on;
 
 static U16 Increase(U16 value, U16 maximum)
 {
@@ -39,12 +41,9 @@ static U16 DecreaseAlarmRpm(U16 value)
 static void Settings_RefreshDisplay(void)
 {
     if (s_state == SETTINGS_TIMER)
-    {
-        Display9Digit10Seg((U8)(s_time % 10));
-        Display10Digit10Seg((U8)(s_time / 10));
-    }
+        DisplayShowTimer((U8)s_time, s_icon_on);
     else if (s_state == SETTINGS_ALARM_RPM)
-        Display4Digits(s_alarm_rpm);
+        DisplayShowAlarmRpm(s_alarm_rpm, s_icon_on);
 }
 
 static void Settings_RefreshCountdown(void)
@@ -60,6 +59,8 @@ void Settings_Init(void)
     s_alarm_rpm = 3000;
     s_remaining_seconds = 0;
     s_last_second_tick = 0;
+    s_last_blink_tick = 0;
+    s_icon_on = 1;
 }
 
 void Settings_Reset(void)
@@ -67,6 +68,8 @@ void Settings_Reset(void)
     s_state = SETTINGS_IDLE;
     s_remaining_seconds = 0;
     s_last_second_tick = (U16)SysTickMs;
+    s_last_blink_tick = (U16)SysTickMs;
+    s_icon_on = 1;
     Settings_RefreshCountdown();
 }
 
@@ -74,9 +77,20 @@ bit Settings_Task(void)
 {
     U16 now;
 
-    if (s_state != SETTINGS_IDLE || s_remaining_seconds == 0) return 0;
-
     now = (U16)SysTickMs;
+    if (s_state != SETTINGS_IDLE)
+    {
+        if ((U16)(now - s_last_blink_tick) >= 500)
+        {
+            s_last_blink_tick = now;
+            s_icon_on = s_icon_on ? 0 : 1;
+            Settings_RefreshDisplay();
+        }
+        return 0;
+    }
+
+    if (s_remaining_seconds == 0) return 0;
+
     if ((U16)(now - s_last_second_tick) < 1000) return 0;
 
     s_last_second_tick = now;
@@ -90,12 +104,17 @@ void Settings_HandleKeyEvent(KeyEvent_t event)
     if (event.id == KEY4 && event.type == KEY_EVT_LONG_PRESS)
     {
         if (s_state == SETTINGS_IDLE)
+        {
             s_state = SETTINGS_TIMER;
+            s_last_blink_tick = (U16)SysTickMs;
+            s_icon_on = 1;
+        }
         else
         {
             s_state = SETTINGS_IDLE;
             s_remaining_seconds = (U8)s_time;
             s_last_second_tick = (U16)SysTickMs;
+            s_icon_on = 1;
         }
         Buzzer_Beep(1000);
         if (s_state != SETTINGS_IDLE) Settings_RefreshDisplay();
