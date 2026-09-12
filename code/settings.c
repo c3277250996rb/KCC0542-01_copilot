@@ -121,7 +121,7 @@ void Settings_HandleKeyEvent(KeyEvent_t event)
     if (event.id == KEY2)
     {
         if (s_state == SETTINGS_TIMER)
-            s_time = Increase(s_time, SETTINGS_TIME_MAX);
+            s_time = Decrease(s_time, SETTINGS_TIME_MIN);
         else
             s_alarm_rpm = DecreaseAlarmRpm(s_alarm_rpm);
         Buzzer_Beep(20);
@@ -129,7 +129,7 @@ void Settings_HandleKeyEvent(KeyEvent_t event)
     else if (event.id == KEY3)
     {
         if (s_state == SETTINGS_TIMER)
-            s_time = Decrease(s_time, SETTINGS_TIME_MIN);
+            s_time = Increase(s_time, SETTINGS_TIME_MAX);
         else
             s_alarm_rpm = IncreaseAlarmRpm(s_alarm_rpm);
         Buzzer_Beep(20);
