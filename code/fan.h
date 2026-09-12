@@ -3,7 +3,7 @@
 
 #include "common.h"
 
-/************************ ·çÉÈ PWM Êä³ö ************************/
+/************************ ï¿½ï¿½ï¿½ï¿½ PWM ï¿½ï¿½ï¿½ ************************/
 // VSP = P26 = EPWM5 (PG5), MUX = 0x17
 // FG-IN = P22 = Timer2 CC0
 #define FAN_PWM_CH          EPWM5
@@ -13,44 +13,44 @@
 #define FAN_CONTROL_MODE_DUTY      0
 #define FAN_CONTROL_MODE_FREQUENCY 1
 
-// 0: Êµ¼Ê·çÉÈÊ¹ÓÃÕ¼¿Õ±Èµ÷ËÙ; 1: FG-IN Óë PWM »Ø»·²âÊÔÊ¹ÓÃÆµÂÊµ÷ËÙ
+// 0: Êµï¿½Ê·ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½Õ¼ï¿½Õ±Èµï¿½ï¿½ï¿½; 1: FG-IN ï¿½ï¿½ PWM ï¿½Ø»ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½Æµï¿½Êµï¿½ï¿½ï¿½
 // #define FAN_CONTROL_MODE FAN_CONTROL_MODE_DUTY
 #define FAN_CONTROL_MODE FAN_CONTROL_MODE_FREQUENCY
 
 #define FAN_PWM_CLOCK_HZ       1000000UL
 #define FAN_PWM_FREQUENCY_HZ   25000UL
 #define FAN_PWM_PERIOD_TICK    ((U16)(FAN_PWM_CLOCK_HZ / FAN_PWM_FREQUENCY_HZ))
-#define FAN_TEST_PERIOD_TICK   10000       // »Ø»·²âÊÔ³õÊ¼ 100Hz (1MHz / 10000)
+#define FAN_TEST_PERIOD_TICK   10000       // ï¿½Ø»ï¿½ï¿½ï¿½ï¿½Ô³ï¿½Ê¼ 100Hz (1MHz / 10000)
 
-/************************ ·çÉÈ FG ÊäÈë ************************/
-// FG-IN = P22 = CC0 (Timer2 ²¶»ñÍ¨µÀ 0)
+/************************ ï¿½ï¿½ï¿½ï¿½ FG ï¿½ï¿½ï¿½ï¿½ ************************/
+// FG-IN = P22 = CC0 (Timer2 ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½ 0)
 #define FAN_FG_CAP_CH       TMR2_CC0
 #define FAN_FG_PIN_CFG      P22CFG
 #define FAN_FG_PORT_TRIS    P2TRIS
 #define FAN_FG_PORT_UP      P2UP
 #define FAN_FG_PIN_BIT      2
 
-/************************ RPM ²ÉÑù²ÎÊý ************************/
-#define FAN_FG_PULSES_PER_REV 2             // Ã¿×ª FG Âö³åÊý (±ê×¼ 4-wire fan = 2)
-#define FAN_RPM_SAMPLE_MS     500           // M ·¨Ê±¼ä´°¿Ú (ms)
-#define FAN_RPM_TICK_MS       1             // Timer1 1ms ½ÚÅÄ
+/************************ RPM ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ************************/
+#define FAN_FG_PULSES_PER_REV 2             // Ã¿×ª FG ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½×¼ 4-wire fan = 2)
+#define FAN_RPM_SAMPLE_MS     200           // M ï¿½ï¿½Ê±ï¿½ä´°ï¿½ï¿½ (ms)
+#define FAN_RPM_TICK_MS       1             // Timer1 1ms ï¿½ï¿½ï¿½ï¿½
 
-// ¹«Ê½: RPM = pulse_cnt * 60000 / (pulses_per_rev * sample_ms)
-//       = pulse_cnt * 60000 / (2 * 500) = pulse_cnt * 60
+// ï¿½ï¿½Ê½: RPM = pulse_cnt * 60000 / (pulses_per_rev * sample_ms)
+//       = pulse_cnt * 60000 / (2 * 200) = pulse_cnt * 150
 #define FAN_RPM_SCALE  ((U16)(60000UL / (FAN_FG_PULSES_PER_REV * FAN_RPM_SAMPLE_MS)))
 
-/************************ È«¾Ö±äÁ¿ ************************/
-extern volatile U16 fan_rpm;                 // µ±Ç° RPM (M ·¨¼ÆËã½á¹û)
+/************************ È«ï¿½Ö±ï¿½ï¿½ï¿½ ************************/
+extern volatile U16 fan_rpm;                 // ï¿½ï¿½Ç° RPM (M ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
 
-/************************ º¯ÊýÉùÃ÷ ************************/
-void Fan_Init(void);                         // ³õÊ¼»¯ PWM + FG ²¶»ñ
-void Fan_ResetRuntime(void);                  // ÇåÁãµµÎ»Ïà¹ØÔËÐÐ×´Ì¬
-void Fan_SetDuty(U8 percent);                // ÉèÖÃÕ¼¿Õ±È 0~100%
-void Fan_SetFrequency(U16 frequency_hz);     // ÉèÖÃ PWM ÆµÂÊ£¬Êä³ö¹Ì¶¨ 50% Õ¼¿Õ±È
-void Fan_SetSpeed(U16 value);                // ¸ù¾Ý FAN_CONTROL_MODE Ñ¡Ôñµ÷ËÙ·½Ê½
+/************************ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ************************/
+void Fan_Init(void);                         // ï¿½ï¿½Ê¼ï¿½ï¿½ PWM + FG ï¿½ï¿½ï¿½ï¿½
+void Fan_ResetRuntime(void);                  // ï¿½ï¿½ï¿½ãµµÎ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
+void Fan_SetDuty(U8 percent);                // ï¿½ï¿½ï¿½ï¿½Õ¼ï¿½Õ±ï¿½ 0~100%
+void Fan_SetFrequency(U16 frequency_hz);     // ï¿½ï¿½ï¿½ï¿½ PWM Æµï¿½Ê£ï¿½ï¿½ï¿½ï¿½ï¿½Ì¶ï¿½ 50% Õ¼ï¿½Õ±ï¿½
+void Fan_SetSpeed(U16 value);                // ï¿½ï¿½ï¿½ï¿½ FAN_CONTROL_MODE Ñ¡ï¿½ï¿½ï¿½ï¿½Ù·ï¿½Ê½
 
-// ISR ½ÓÈëµã (ÔÚ isr.c ÖÐµ÷ÓÃ)
-void Fan_FgCaptureIsr(void);                 // Timer2 ²¶»ñÖÐ¶Ï: ÀÛ¼Ó FG Âö³å
-void Fan_RpmSampleIsr(void);                 // Timer1 1ms ÖÐ¶Ï: M ·¨Ê±¼ä´°¿Ú
+// ISR ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ isr.c ï¿½Ðµï¿½ï¿½ï¿½)
+void Fan_FgCaptureIsr(void);                 // Timer2 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½: ï¿½Û¼ï¿½ FG ï¿½ï¿½ï¿½ï¿½
+void Fan_RpmSampleIsr(void);                 // Timer1 1ms ï¿½Ð¶ï¿½: M ï¿½ï¿½Ê±ï¿½ä´°ï¿½ï¿½
 
 #endif
