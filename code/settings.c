@@ -116,7 +116,7 @@ void Settings_HandleKeyEvent(KeyEvent_t event)
             s_last_second_tick = (U16)SysTickMs;
             s_icon_on = 1;
         }
-        Buzzer_Beep(1000);
+        Buzzer_Beep(300);
         if (s_state != SETTINGS_IDLE) Settings_RefreshDisplay();
         else Settings_RefreshCountdown();
         return;

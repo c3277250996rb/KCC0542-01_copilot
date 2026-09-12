@@ -169,7 +169,7 @@ int main(void)
                     }
                     else if (evt.type == KEY_EVT_LONG_PRESS)
                     {
-                        Buzzer_Beep(1000);
+                        Buzzer_Beep(300);
                     }
                     continue;
                 }
@@ -195,7 +195,7 @@ int main(void)
                                 if (fan_tick > 0) fan_tick--;
                                 Fan_ApplyLevel();
                                 break;
-                            case KEY_EVT_LONG_PRESS: Buzzer_Beep(1000); break;
+                            case KEY_EVT_LONG_PRESS: Buzzer_Beep(300); break;
                             default: break;
                         }
                         break;
@@ -209,7 +209,7 @@ int main(void)
                                 Fan_ApplyLevel();
                                 break;
                             case KEY_EVT_LONG_PRESS:
-                                Buzzer_Beep(1000);
+                                Buzzer_Beep(300);
                                 break;
                             default:
                                 break;
