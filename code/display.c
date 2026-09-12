@@ -67,6 +67,8 @@ typedef struct
 static U16 display_number = 0;
 static U8 display_independent_digits[6] = {0, 0, 0, 0, 0, 0};
 static U32 display_graphics = 0;
+static U8 display_independent_mask = 0x3f;
+static bit display_primary_enabled = 1;
 
 static void WriteDisplayRam(DisplayRamBuffer *ram);
 static void BuildDisplayRam(DisplayRamBuffer *ram);
@@ -239,7 +241,7 @@ static void AddDigitSegments(u8 position, U16 segment_mask,
     }
 }
 
-/* Çå¿ÕÒ»´ÎÍêÕûÏÔÊ¾Ö¡µÄ RAM »º³åÇø£¬±ÜÃâÉÏÒ»Ö¡µÄ¶ÎÎ»²ÐÁô¡£ */
+/* ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾Ö¡ï¿½ï¿½ RAM ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»Ö¡ï¿½Ä¶ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 static void ClearDisplayRam(DisplayRamBuffer *ram)
 {
     ram->ram01 = 0;
@@ -261,9 +263,9 @@ static void ClearDisplayRam(DisplayRamBuffer *ram)
 }
 
 /*
- * ÏòÖ¸¶¨ HT1621 RAM µØÖ·×·¼Ó¶ÎÎ»¡£
- * bits Ê¹ÓÃ 8 Î»ÑÚÂë£¬bit7 ¶ÔÓ¦¸ÃµØÖ·µÄ×î¸ßÎ»£¬bit0 ¶ÔÓ¦×îµÍÎ»¡£
- * ¸Ãº¯ÊýÊ¹ÓÃ OR£¬Òò´Ë²»»á¸²¸ÇÍ¬Ò»µØÖ·ÉÏÒÑ¾­¼ÓÈëµÄÊý×Ö¶Î»òÍ¼ÐÎ¶Î¡£
+ * ï¿½ï¿½Ö¸ï¿½ï¿½ HT1621 RAM ï¿½ï¿½Ö·×·ï¿½Ó¶ï¿½Î»ï¿½ï¿½
+ * bits Ê¹ï¿½ï¿½ 8 Î»ï¿½ï¿½ï¿½ë£¬bit7 ï¿½ï¿½Ó¦ï¿½Ãµï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½bit0 ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Î»ï¿½ï¿½
+ * ï¿½Ãºï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ ORï¿½ï¿½ï¿½ï¿½Ë²ï¿½ï¿½á¸²ï¿½ï¿½Í¬Ò»ï¿½ï¿½Ö·ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¶Î»ï¿½Í¼ï¿½Î¶Î¡ï¿½
  */
 static void AddRamBits(DisplayRamBuffer *ram, u8 address, u8 bits)
 {
@@ -289,7 +291,7 @@ static void AddRamBits(DisplayRamBuffer *ram, u8 address, u8 bits)
     }
 }
 
-/* ½« display_graphics ÖÐ¿ªÆôµÄ T1~T23 Í¼ÐÎ¶ÎºÏ²¢µ½ÏÔÊ¾ RAM¡£ */
+/* ï¿½ï¿½ display_graphics ï¿½Ð¿ï¿½ï¿½ï¿½ï¿½ï¿½ T1~T23 Í¼ï¿½Î¶ÎºÏ²ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ RAMï¿½ï¿½ */
 static void AddGraphicSegments(DisplayRamBuffer *ram)
 {
     if (display_graphics & DISPLAY_GRAPHIC_T11) AddRamBits(ram, DISPLAY_RAM_ADDRESS_27, 0x80);
@@ -320,28 +322,28 @@ static void AddGraphicSegments(DisplayRamBuffer *ram)
     if (display_graphics & DISPLAY_GRAPHIC_T17) AddRamBits(ram, DISPLAY_RAM_ADDRESS_17, 0x01);
 }
 
-/* ÉèÖÃÈ«²¿Í¼ÐÎ¶Î×´Ì¬£º´«ÈëµÄÎ»Îª1ÔòµãÁÁ£¬Îª0Ôò¹Ø±Õ¡£ */
+/* ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½Í¼ï¿½Î¶ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»Îª1ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îª0ï¿½ï¿½Ø±Õ¡ï¿½ */
 void DisplayGraphicsSet(U32 graphic_mask)
 {
     display_graphics = graphic_mask;
     DisplayGraphicsRefresh();
 }
 
-/* ´ò¿ªÖ¸¶¨Í¼ÐÎ¶Î£¬Î´°üº¬ÔÚÑÚÂëÖÐµÄÍ¼ÐÎ±£³ÖÔ­×´Ì¬¡£ */
+/* ï¿½ï¿½Ö¸ï¿½ï¿½Í¼ï¿½Î¶Î£ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½Í¼ï¿½Î±ï¿½ï¿½ï¿½Ô­×´Ì¬ï¿½ï¿½ */
 void DisplayGraphicsOn(U32 graphic_mask)
 {
     display_graphics |= graphic_mask;
     DisplayGraphicsRefresh();
 }
 
-/* ¹Ø±ÕÖ¸¶¨Í¼ÐÎ¶Î£¬Î´°üº¬ÔÚÑÚÂëÖÐµÄÍ¼ÐÎ±£³ÖÔ­×´Ì¬¡£ */
+/* ï¿½Ø±ï¿½Ö¸ï¿½ï¿½Í¼ï¿½Î¶Î£ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½Í¼ï¿½Î±ï¿½ï¿½ï¿½Ô­×´Ì¬ï¿½ï¿½ */
 void DisplayGraphicsOff(U32 graphic_mask)
 {
     display_graphics &= ~graphic_mask;
     DisplayGraphicsRefresh();
 }
 
-/* °´µ±Ç°±£´æµÄÊý×ÖºÍÍ¼ÐÎ×´Ì¬ÖØ½¨²¢Ë¢ÐÂÕû¿éÏÔÊ¾¡£ */
+/* ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öºï¿½Í¼ï¿½ï¿½×´Ì¬ï¿½Ø½ï¿½ï¿½ï¿½Ë¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ */
 void DisplayGraphicsRefresh(void)
 {
     DisplayRamBuffer ram;
@@ -350,7 +352,7 @@ void DisplayGraphicsRefresh(void)
     WriteDisplayRam(&ram);
 }
 
-/* Ð´Èë 1~4 ºÅÁª¶¯Êý×Ö¹Ü¶ÔÓ¦µÄ RAM µØÖ·¡£ */
+/* Ð´ï¿½ï¿½ 1~4 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¹Ü¶ï¿½Ó¦ï¿½ï¿½ RAM ï¿½ï¿½Ö·ï¿½ï¿½ */
 static void WritePrimaryDisplayRam(DisplayRamBuffer *ram)
 {
     Write_1621(DISPLAY_RAM_ADDRESS_19, ram->ram19);
@@ -361,7 +363,7 @@ static void WritePrimaryDisplayRam(DisplayRamBuffer *ram)
     Write_1621(DISPLAY_RAM_ADDRESS_27, ram->ram27);
 }
 
-/* Ð´Èë 5~8 ºÅ¶ÀÁ¢Êý×Ö¹Ü¼°ÆäËùÔÚµÄ RAM µØÖ·¡£ */
+/* Ð´ï¿½ï¿½ 5~8 ï¿½Å¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¹Ü¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½ RAM ï¿½ï¿½Ö·ï¿½ï¿½ */
 static void WriteSecondaryDisplayRam(DisplayRamBuffer *ram)
 {
     Write_1621(DISPLAY_RAM_ADDRESS_25, ram->ram25);
@@ -371,7 +373,7 @@ static void WriteSecondaryDisplayRam(DisplayRamBuffer *ram)
     Write_1621(DISPLAY_RAM_ADDRESS_07, ram->ram07);
 }
 
-/* Ð´Èë 9¡¢10 ºÅ¶ÀÁ¢Êý×Ö¹Ü¼°Í¼ÐÎ¶ÎËùÔÚµÄ RAM µØÖ·¡£ */
+/* Ð´ï¿½ï¿½ 9ï¿½ï¿½10 ï¿½Å¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¹Ü¼ï¿½Í¼ï¿½Î¶ï¿½ï¿½ï¿½ï¿½Úµï¿½ RAM ï¿½ï¿½Ö·ï¿½ï¿½ */
 static void WriteTertiaryDisplayRam(DisplayRamBuffer *ram)
 {
     Write_1621(DISPLAY_RAM_ADDRESS_09, ram->ram09);
@@ -381,7 +383,7 @@ static void WriteTertiaryDisplayRam(DisplayRamBuffer *ram)
     Write_1621(DISPLAY_RAM_ADDRESS_17, ram->ram17);
 }
 
-/* °´Ó²¼þ·Ö×éË³Ðò£¬½«ÍêÕû RAM »º³åÇøÐ´Èë HT1621¡£ */
+/* ï¿½ï¿½Ó²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë³ï¿½ò£¬½ï¿½ï¿½ï¿½ï¿½ï¿½ RAM ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ HT1621ï¿½ï¿½ */
 static void WriteDisplayRam(DisplayRamBuffer *ram)
 {
     WritePrimaryDisplayRam(ram);
@@ -390,10 +392,10 @@ static void WriteDisplayRam(DisplayRamBuffer *ram)
 }
 
 /*
- * ¸ù¾Ýµ±Ç°ÏÔÊ¾×´Ì¬Éú³ÉÒ»Ö¡ RAM Êý¾Ý£º
- * 1~4 ºÅ¹Ü¹²Ïí display_number£¬ÏÔÊ¾ÆäÇ§¡¢°Ù¡¢Ê®¡¢¸öÎ»£»
- * 5~10 ºÅ¹Ü·Ö±ðÊ¹ÓÃ display_independent_digits[0..5]£»
- * ×îºóµþ¼Ó¶ÀÁ¢µÄ T1~T23 Í¼ÐÎ¶Î¡£
+ * ï¿½ï¿½ï¿½Ýµï¿½Ç°ï¿½ï¿½Ê¾×´Ì¬ï¿½ï¿½ï¿½ï¿½Ò»Ö¡ RAM ï¿½ï¿½ï¿½Ý£ï¿½
+ * 1~4 ï¿½Å¹Ü¹ï¿½ï¿½ï¿½ display_numberï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½Ç§ï¿½ï¿½ï¿½Ù¡ï¿½Ê®ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½
+ * 5~10 ï¿½Å¹Ü·Ö±ï¿½Ê¹ï¿½ï¿½ display_independent_digits[0..5]ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½ï¿½Ó¶ï¿½ï¿½ï¿½ï¿½ï¿½ T1~T23 Í¼ï¿½Î¶Î¡ï¿½
  */
 static void BuildDisplayRam(DisplayRamBuffer *ram)
 {
@@ -403,35 +405,39 @@ static void BuildDisplayRam(DisplayRamBuffer *ram)
     u8 digit4 = (u8)(display_number % 10);
 
     ClearDisplayRam(ram);
-    AddDigitSegments(DISPLAY_DIGIT_1, GetDigitSegmentMask(digit1), ram);
-    AddDigitSegments(DISPLAY_DIGIT_2, GetDigitSegmentMask(digit2), ram);
-    AddDigitSegments(DISPLAY_DIGIT_3, GetDigitSegmentMask(digit3), ram);
-    AddDigitSegments(DISPLAY_DIGIT_4, GetDigitSegmentMask(digit4), ram);
+    if (display_primary_enabled)
+    {
+        AddDigitSegments(DISPLAY_DIGIT_1, GetDigitSegmentMask(digit1), ram);
+        AddDigitSegments(DISPLAY_DIGIT_2, GetDigitSegmentMask(digit2), ram);
+        AddDigitSegments(DISPLAY_DIGIT_3, GetDigitSegmentMask(digit3), ram);
+        AddDigitSegments(DISPLAY_DIGIT_4, GetDigitSegmentMask(digit4), ram);
+    }
 
-    AddDigitSegments(DISPLAY_DIGIT_5,
-                     GetDigitSegmentMask(display_independent_digits[0]), ram);
-    AddDigitSegments(DISPLAY_DIGIT_6,
-                     GetDigitSegmentMask(display_independent_digits[1]), ram);
-    AddDigitSegments(DISPLAY_DIGIT_7,
-                     GetDigitSegmentMask(display_independent_digits[2]), ram);
-    AddDigitSegments(DISPLAY_DIGIT_8,
-                     GetDigitSegmentMask(display_independent_digits[3]), ram);
-    AddDigitSegments(DISPLAY_DIGIT_9,
-                     GetDigitSegmentMask(display_independent_digits[4]), ram);
-    AddDigitSegments(DISPLAY_DIGIT_10,
-                     GetDigitSegmentMask(display_independent_digits[5]), ram);
+    if (display_independent_mask & 0x01)
+        AddDigitSegments(DISPLAY_DIGIT_5, GetDigitSegmentMask(display_independent_digits[0]), ram);
+    if (display_independent_mask & 0x02)
+        AddDigitSegments(DISPLAY_DIGIT_6, GetDigitSegmentMask(display_independent_digits[1]), ram);
+    if (display_independent_mask & 0x04)
+        AddDigitSegments(DISPLAY_DIGIT_7, GetDigitSegmentMask(display_independent_digits[2]), ram);
+    if (display_independent_mask & 0x08)
+        AddDigitSegments(DISPLAY_DIGIT_8, GetDigitSegmentMask(display_independent_digits[3]), ram);
+    if (display_independent_mask & 0x10)
+        AddDigitSegments(DISPLAY_DIGIT_9, GetDigitSegmentMask(display_independent_digits[4]), ram);
+    if (display_independent_mask & 0x20)
+        AddDigitSegments(DISPLAY_DIGIT_10, GetDigitSegmentMask(display_independent_digits[5]), ram);
 
     AddGraphicSegments(ram);
 }
 
-/* ÉèÖÃ 1~4 ºÅ¹ÜÁª¶¯ÏÔÊ¾µÄËÄÎ»Êý£¬²¢Á¢¼´Ë¢ÐÂ¡£ */
+/* ï¿½ï¿½ï¿½ï¿½ 1~4 ï¿½Å¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¢ï¿½Â¡ï¿½ */
 void Display4Digits(U16 value)
 {
     display_number = value % 10000;
+    display_primary_enabled = 1;
     Display4DigitsRefresh();
 }
 
-/* Ê¹ÓÃµ±Ç°±£´æµÄËÄÎ»ÊýºÍ¶ÀÁ¢¹Ü×´Ì¬ÖØÐÂË¢ÐÂÏÔÊ¾¡£ */
+/* Ê¹ï¿½Ãµï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½Í¶ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½Ë¢ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ */
 void Display4DigitsRefresh(void)
 {
     DisplayRamBuffer ram;
@@ -440,7 +446,7 @@ void Display4DigitsRefresh(void)
     WriteDisplayRam(&ram);
 }
 
-/* Ö±½Ó²âÊÔ 1 ºÅ¹Ü£»¸Ã½Ó¿ÚÖ»Ð´ÈëÖ÷ÏÔÊ¾ RAM ÇøÓò¡£ */
+/* Ö±ï¿½Ó²ï¿½ï¿½ï¿½ 1 ï¿½Å¹Ü£ï¿½ï¿½Ã½Ó¿ï¿½Ö»Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ RAM ï¿½ï¿½ï¿½ï¿½ */
 void Display1Digit10Seg(U8 digit)
 {
     DisplayRamBuffer ram;
@@ -450,44 +456,73 @@ void Display1Digit10Seg(U8 digit)
     WritePrimaryDisplayRam(&ram);
 }
 
-/* ¶ÀÁ¢ÉèÖÃ 6 ºÅ¹Ü£¬digit ³¬¹ý9Ê±Ö»±£Áô¸öÎ»¡£ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 6 ï¿½Å¹Ü£ï¿½digit ï¿½ï¿½ï¿½ï¿½9Ê±Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ */
 void Display6Digit10Seg(U8 digit)
 {
     display_independent_digits[1] = digit % 10;
     DisplayGraphicsRefresh();
 }
 
-/* ¶ÀÁ¢ÉèÖÃ 5 ºÅ¹Ü£¬digit ³¬¹ý9Ê±Ö»±£Áô¸öÎ»¡£ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 5 ï¿½Å¹Ü£ï¿½digit ï¿½ï¿½ï¿½ï¿½9Ê±Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ */
 void Display5Digit10Seg(U8 digit)
 {
     display_independent_digits[0] = digit % 10;
     DisplayGraphicsRefresh();
 }
 
-/* ¶ÀÁ¢ÉèÖÃ 7 ºÅ¹Ü£¬digit ³¬¹ý9Ê±Ö»±£Áô¸öÎ»¡£ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 7 ï¿½Å¹Ü£ï¿½digit ï¿½ï¿½ï¿½ï¿½9Ê±Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ */
 void Display7Digit10Seg(U8 digit)
 {
     display_independent_digits[2] = digit % 10;
     DisplayGraphicsRefresh();
 }
 
-/* ¶ÀÁ¢ÉèÖÃ 8 ºÅ¹Ü£¬digit ³¬¹ý9Ê±Ö»±£Áô¸öÎ»¡£ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 8 ï¿½Å¹Ü£ï¿½digit ï¿½ï¿½ï¿½ï¿½9Ê±Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ */
 void Display8Digit10Seg(U8 digit)
 {
     display_independent_digits[3] = digit % 10;
     DisplayGraphicsRefresh();
 }
 
-/* ¶ÀÁ¢ÉèÖÃ 9 ºÅ¹Ü£¬digit ³¬¹ý9Ê±Ö»±£Áô¸öÎ»¡£ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 9 ï¿½Å¹Ü£ï¿½digit ï¿½ï¿½ï¿½ï¿½9Ê±Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ */
 void Display9Digit10Seg(U8 digit)
 {
     display_independent_digits[4] = digit % 10;
     DisplayGraphicsRefresh();
 }
 
-/* ¶ÀÁ¢ÉèÖÃ 10 ºÅ¹Ü£¬digit ³¬¹ý9Ê±Ö»±£Áô¸öÎ»¡£ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 10 ï¿½Å¹Ü£ï¿½digit ï¿½ï¿½ï¿½ï¿½9Ê±Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ */
 void Display10Digit10Seg(U8 digit)
 {
     display_independent_digits[5] = digit % 10;
+    DisplayGraphicsRefresh();
+}
+
+void DisplayShowNormal(U16 rpm, U8 fan_level, U32 graphics)
+{
+    display_primary_enabled = 1;
+    display_independent_mask = 0x3f;
+    display_number = rpm % 10000;
+    display_independent_digits[1] = fan_level % 10;
+    display_graphics = graphics;
+    DisplayGraphicsRefresh();
+}
+
+void DisplayShowTimer(U8 value, bit icon_on)
+{
+    display_primary_enabled = 0;
+    display_independent_mask = 0x30;
+    display_independent_digits[4] = value % 10;
+    display_independent_digits[5] = value / 10;
+    display_graphics = icon_on ? DISPLAY_GRAPHIC_T18 : 0;
+    DisplayGraphicsRefresh();
+}
+
+void DisplayShowAlarmRpm(U16 value, bit icon_on)
+{
+    display_primary_enabled = 1;
+    display_independent_mask = 0;
+    display_number = value % 10000;
+    display_graphics = icon_on ? DISPLAY_GRAPHIC_T3 : 0;
     DisplayGraphicsRefresh();
 }

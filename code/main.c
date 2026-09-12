@@ -1,4 +1,4 @@
-/* ×ÏÔÃÔÆ±¦Æ¼ç÷ÕäÆæ¼Î¶ùÈáÈá */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½Æ±ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¶ï¿½ï¿½ï¿½ï¿½ï¿½ */
 #include "cms8s6990.h"
 #include "common.h"
 #include "key.h"
@@ -11,9 +11,14 @@
 #include "settings.h"
 #include "alarm.h"
 
-static U8 fan_tick = 0;  // ·çÉÈµµÎ»: 0=¹Ø, 1=µÍËÙ, 2=¸ßËÙ
+static U8 fan_tick = 0;  // ï¿½ï¿½ï¿½Èµï¿½Î»: 0=ï¿½ï¿½, 1=ï¿½ï¿½ï¿½ï¿½, 2=ï¿½ï¿½ï¿½ï¿½
 static U16 displayed_fan_rpm = 0;
 static U8 key4_graphic_index = 0;
+static U32 displayed_graphics;
+static U8 displayed_level;
+static bit displayed_alarm;
+static U8 displayed_delay;
+static bit display_was_settings;
 
 static code U32 fan_level_graphics[] = {
     0,
@@ -25,7 +30,7 @@ static code U32 fan_level_graphics[] = {
     DISPLAY_GRAPHIC_T13
 };
 
-/* KEY4 °´¼ü¿ÉÑ¡ÔñµÄÍ¼ÐÎ£¬0 ºÅÔªËØ±íÊ¾È«²¿¹Ø±Õ¡£ */
+/* KEY4 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½Í¼ï¿½Î£ï¿½0 ï¿½ï¿½Ôªï¿½Ø±ï¿½Ê¾È«ï¿½ï¿½ï¿½Ø±Õ¡ï¿½ */
 static code U32 key4_graphic_masks[] = {
     0,
     DISPLAY_GRAPHIC_T1,
@@ -46,9 +51,41 @@ static code U32 key4_graphic_masks[] = {
 
 static void Fan_RefreshDisplay(void)
 {
+    U32 graphics = fan_level_graphics[fan_tick] |
+                   key4_graphic_masks[key4_graphic_index];
+
+    if (fan_tick != 0) graphics |= DISPLAY_GRAPHIC_T1;
     DisplayGraphicsSet(
-        fan_level_graphics[fan_tick] |
-        key4_graphic_masks[key4_graphic_index]);
+        graphics);
+}
+
+static void App_RefreshNormalDisplay(void)
+{
+    U32 graphics;
+    U8 delay = Settings_GetRemainingSeconds() ? 1 : 0;
+    bit alarm = Alarm_IsActive();
+
+    graphics = fan_level_graphics[fan_tick] |
+               key4_graphic_masks[key4_graphic_index];
+    if (fan_tick != 0) graphics |= DISPLAY_GRAPHIC_T1;
+    if (delay) graphics |= DISPLAY_GRAPHIC_T18;
+    if (alarm) graphics |= DISPLAY_GRAPHIC_T3;
+
+    if (display_was_settings ||
+        displayed_fan_rpm != fan_rpm ||
+        displayed_level != fan_tick ||
+        displayed_alarm != alarm ||
+        displayed_delay != delay ||
+        displayed_graphics != graphics)
+    {
+        displayed_fan_rpm = fan_rpm;
+        displayed_level = fan_tick;
+        displayed_alarm = alarm;
+        displayed_delay = delay;
+        displayed_graphics = graphics;
+        display_was_settings = 0;
+        DisplayShowNormal(fan_rpm, fan_tick, graphics);
+    }
 }
 
 static void Fan_ApplyLevel(void)
@@ -80,41 +117,41 @@ int main(void)
     HT1621_all_off(16);
     BACK_LIGHT_SET(1);
 
-    LED_Init();         // ³õÊ¼»¯ LED Òý½Å (P01)
-    LED_On();           // µãÁÁ LED
+    LED_Init();         // ï¿½ï¿½Ê¼ï¿½ï¿½ LED ï¿½ï¿½ï¿½ï¿½ (P01)
+    LED_On();           // ï¿½ï¿½ï¿½ï¿½ LED
 
-    Buzzer_Init();      // ³õÊ¼»¯·äÃùÆ÷ (P23 ÍÆÍìÊä³ö, Ä¬ÈÏ¹Ø±Õ)
+    Buzzer_Init();      // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (P23 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, Ä¬ï¿½Ï¹Ø±ï¿½)
 
-    Key_InitTimer1();   // ³õÊ¼»¯ Timer1 (1ms ÖÐ¶ÏÇý¶¯°´¼üÉ¨Ãè)
-    Key_Init();         // ³õÊ¼»¯ 4 ¸ö°´¼ü (SW1~SW4)
+    Key_InitTimer1();   // ï¿½ï¿½Ê¼ï¿½ï¿½ Timer1 (1ms ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¨ï¿½ï¿½)
+    Key_Init();         // ï¿½ï¿½Ê¼ï¿½ï¿½ 4 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (SW1~SW4)
 
-    Power_Init();       // µçÔ´×´Ì¬³õÊ¼»¯
-    Plc_Init();         // PLC ÎÞÔ´¿ØÖÆÐÅºÅ³õÊ¼»¯ (P02)
-    Fan_Init();         // ·çÉÈ PWM + FG ËÙ¶È·´À¡³õÊ¼»¯
-    Settings_Init();    // ÉèÖÃ²Ëµ¥×´Ì¬»ú
-    Alarm_Init();       // ³¬ËÙ±¨¾¯Êä³ö
+    Power_Init();       // ï¿½ï¿½Ô´×´Ì¬ï¿½ï¿½Ê¼ï¿½ï¿½
+    Plc_Init();         // PLC ï¿½ï¿½Ô´ï¿½ï¿½ï¿½ï¿½ï¿½ÅºÅ³ï¿½Ê¼ï¿½ï¿½ (P02)
+    Fan_Init();         // ï¿½ï¿½ï¿½ï¿½ PWM + FG ï¿½Ù¶È·ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+    Settings_Init();    // ï¿½ï¿½ï¿½Ã²Ëµï¿½×´Ì¬ï¿½ï¿½
+    Alarm_Init();       // ï¿½ï¿½ï¿½Ù±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
     Display4Digits(0000);
 
     while(1)
     {
-        Key_Task();     // 1ms ½ÚÅÄ -> 10ms É¨ÃèËùÓÐ°´¼ü
+        Key_Task();     // 1ms ï¿½ï¿½ï¿½ï¿½ -> 10ms É¨ï¿½ï¿½ï¿½ï¿½ï¿½Ð°ï¿½ï¿½ï¿½
+        Buzzer_Task();
         if (Settings_Task())
         {
             fan_tick = 0;
             Fan_ApplyLevel();
         }
-        Plc_Task();     // 10ms ½ÚÅÄ -> 100ms É¨Ãè PLC ÐÅºÅ
+        Plc_Task();     // 10ms ï¿½ï¿½ï¿½ï¿½ -> 100ms É¨ï¿½ï¿½ PLC ï¿½Åºï¿½
         Alarm_Task(fan_rpm, Settings_GetAlarmRpm(),
                (sys_state == E_SYS_ON) ? 1 : 0);
 
-        if (!Settings_IsActive() && (fan_rpm != displayed_fan_rpm))
-        {
-            displayed_fan_rpm = fan_rpm;
-            Display4Digits(displayed_fan_rpm);
-        }
+        if (!Settings_IsActive())
+            App_RefreshNormalDisplay();
+        else
+            display_was_settings = 1;
 
-        // ====== ÊÂ¼þ´¦Àí ======
+        // ====== ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ ======
         {
             KeyEvent_t evt;
             while (1)
@@ -122,7 +159,7 @@ int main(void)
                 evt = Key_GetEvent();
                 if (evt.type == KEY_EVT_NONE) break;
 
-                // KEY1 ¹Ì¶¨×÷ÎªµçÔ´¼ü
+                // KEY1 ï¿½Ì¶ï¿½ï¿½ï¿½Îªï¿½ï¿½Ô´ï¿½ï¿½
                 if (evt.id == KEY1)
                 {
                     if (evt.type == KEY_EVT_PRESS)
@@ -137,17 +174,17 @@ int main(void)
                     continue;
                 }
 
-                /* ÉèÖÃ×´Ì¬ÓÅÏÈÏû·Ñ KEY2/3/4£¬±ÜÃâÓëÔËÐÐµµÎ»Âß¼­ñîºÏ¡£ */
+                /* ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ KEY2/3/4ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½Î»ï¿½ß¼ï¿½ï¿½ï¿½Ï¡ï¿½ */
                 if (evt.id == KEY4 || Settings_IsActive())
                 {
                     Settings_HandleKeyEvent(evt);
                     if (Settings_IsActive() || evt.id == KEY4) continue;
                 }
 
-                // ¹Ø»ú×´Ì¬ÏÂºöÂÔËùÓÐ·ÇµçÔ´¼ü
+                // ï¿½Ø»ï¿½×´Ì¬ï¿½Âºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð·Çµï¿½Ô´ï¿½ï¿½
                 if (sys_state == E_SYS_OFF) continue;
 
-                // ====== ¿ª»ú×´Ì¬ÏÂ: ´¦Àí KEY2 / KEY3 / KEY4 ======
+                // ====== ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ KEY2 / KEY3 / KEY4 ======
                 switch (evt.id)
                 {
                     case KEY2:
